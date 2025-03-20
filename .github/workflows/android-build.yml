@@ -26,6 +26,9 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
+      - name: Verify APK exists
+        run: ls -R app/build/outputs/apk/debug/
+
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v3
         with:
