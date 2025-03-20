@@ -20,8 +20,8 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Grant execute permission to Gradle wrapper
-        run: chmod +x ./gradlew
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
 
       - name: Build debug APK
         run: ./gradlew assembleDebug
@@ -32,5 +32,5 @@ jobs:
       - name: Upload APK as Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: workout-tracker-apk
+          name: debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
