@@ -164,6 +164,7 @@ class MainActivity : AppCompatActivity() {
                         runOnUiThread { updateWorkout() }
                     }
                 }
+                // This is a test commit to trigger GitHub Actions
             })
         } catch (e: Exception) {
             Toast.makeText(this, "Error connecting: ${e.message}", Toast.LENGTH_SHORT).show()

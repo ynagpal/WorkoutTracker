@@ -6,7 +6,6 @@ channel = "stable-24_05"
 run = ["sh", "-c", "./gradlew assembleDebug"]
 
 [workflows]
-runButton = "Build Android"
 
 [[workflows.workflow]]
 name = "Build Android"
