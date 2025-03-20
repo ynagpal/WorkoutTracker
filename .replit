@@ -1,2 +1,6 @@
+run = "./gradlew assembleDebug"
 [nix]
 channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "./gradlew assembleDebug"]
