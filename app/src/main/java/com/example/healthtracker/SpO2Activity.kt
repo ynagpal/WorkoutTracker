@@ -1,62 +1,47 @@
 package com.example.healthtracker
 
-import android.bluetooth.*
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import java.util.*
 
 class SpO2Activity : AppCompatActivity() {
-    private lateinit var spO2Text: TextView
-    private var bluetoothGatt: BluetoothGatt? = null
+
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private lateinit var spO2DataText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_spo2)
 
-        spO2Text = findViewById(R.id.spO2Text)
+        spO2DataText = findViewById(R.id.spO2DataText)
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        scanForBluetoothDevices()
+        scanForSpO2Devices()
     }
 
-    private fun scanForBluetoothDevices() {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (bluetoothAdapter?.isEnabled == true) {
-            val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-            val scanCallback = object : ScanCallback() {
-                override fun onScanResult(callbackType: Int, result: ScanResult) {
-                    super.onScanResult(callbackType, result)
-                    val device = result.device
-                    if (device.name != null && device.name.contains("Ring")) { 
-                        bluetoothLeScanner?.stopScan(this)
-                        connectToDevice(device)
-                    }
-                }
-            }
-            bluetoothLeScanner.startScan(scanCallback)
+    private fun scanForSpO2Devices() {
+        if (bluetoothAdapter?.isEnabled != true) {
+            Toast.makeText(this, "Please enable Bluetooth", Toast.LENGTH_SHORT).show()
+            return
         }
-    }
 
-    private fun connectToDevice(device: BluetoothDevice) {
-        bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
-            override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-                when (newState) {
-                    BluetoothProfile.STATE_CONNECTED -> gatt?.discoverServices()
+        val scanner: BluetoothLeScanner = bluetoothAdapter?.bluetoothLeScanner ?: return
+        val callback = object : ScanCallback() {
+            override fun onScanResult(callbackType: Int, result: ScanResult?) {
+                val device = result?.device
+                if (device?.name?.contains("SpO2") == true) {
+                    scanner.stopScan(this)
+                    spO2DataText.text = "Connected to ${device.name} for SpO2 tracking"
                 }
             }
+        }
 
-            override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-                val service = gatt?.getService(UUID.fromString("00001822-0000-1000-8000-00805F9B34FB"))
-                val characteristic = service?.getCharacteristic(UUID.fromString("00002A5F-0000-1000-8000-00805F9B34FB"))
-                gatt?.setCharacteristicNotification(characteristic, true)
-            }
-
-            override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
-                val spo2 = characteristic?.value?.get(1)?.toInt() ?: 95
-                runOnUiThread {
-                    spO2Text.text = "SpO2: $spo2%"
-                }
-            }
-        })
+        scanner.startScan(callback)
+        Toast.makeText(this, "Scanning for SpO2 devices...", Toast.LENGTH_SHORT).show()
     }
 }

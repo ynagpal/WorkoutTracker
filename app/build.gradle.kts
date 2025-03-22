@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.application") version "8.2.0"
+    id("org.jetbrains.kotlin.android") version "1.9.0"
 }
 
 android {
@@ -42,7 +42,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.11.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4") // Add coroutines
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1") // Add lifecycle
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
