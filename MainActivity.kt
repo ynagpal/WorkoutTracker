@@ -1,4 +1,5 @@
 package com.example.healthtracker
+
 import com.example.healthtracker.R
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -9,7 +10,6 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
-*
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -151,14 +151,15 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     if (characteristic?.uuid == UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB")) {
-                        val flag = characteristic.value?.get(0)?.toInt() ?: return
-                        heartRate = if (flag and 0x01 != 0) {
-                            (characteristic.value?.get(1)?.toInt() ?: 0 and 0xFF) or
-                            ((characteristic.value?.get(2)?.toInt() ?: 0 and 0xFF) shl 8)
-                        } else {
-                            characteristic.value?.get(1)?.toInt() ?: 0 and 0xFF
+                        characteristic.value?.let { value ->
+                            val flag = value[0].toInt()
+                            heartRate = if (flag and 0x01 != 0) {
+                                (value[1].toInt() and 0xFF) or ((value[2].toInt() and 0xFF) shl 8)
+                            } else {
+                                value[1].toInt() and 0xFF
+                            }
+                            runOnUiThread { updateWorkout() }
                         }
-                        runOnUiThread { updateWorkout() }
                     }
                 }
             })
