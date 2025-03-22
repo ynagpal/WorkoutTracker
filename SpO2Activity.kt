@@ -1,5 +1,6 @@
 package com.example.healthtracker
-
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.bluetooth.*
 import android.os.Bundle
 import android.widget.TextView
