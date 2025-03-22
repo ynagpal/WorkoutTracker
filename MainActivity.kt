@@ -1,6 +1,5 @@
 package com.example.healthtracker
 
-import com.example.healthtracker.R
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Intent
@@ -10,7 +9,6 @@ import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
-import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -134,7 +132,7 @@ class MainActivity : AppCompatActivity() {
                     val service = gatt?.getService(UUID.fromString("0000180D-0000-1000-8000-00805F9B34FB"))
                     val characteristic = service?.getCharacteristic(UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB"))
                     if (characteristic != null) {
-                        gatt.setCharacteristicNotification(characteristic, true)
+                        gatt?.setCharacteristicNotification(characteristic, true)
                     }
                 }
             }
