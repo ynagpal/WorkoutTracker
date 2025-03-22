@@ -22,4 +22,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HealthTracker"
-include(":lib")
+include(":app")
