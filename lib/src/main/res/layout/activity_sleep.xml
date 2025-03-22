@@ -1,0 +1,49 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:gravity="center"
+    android:background="@color/black">
+
+    <TextView
+        android:id="@+id/deepSleepText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Deep Sleep: -- min"
+        android:textSize="24sp"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:id="@+id/lightSleepText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Light Sleep: -- min"
+        android:textSize="24sp"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:id="@+id/remSleepText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="REM Sleep: -- min"
+        android:textSize="24sp"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:id="@+id/awakeTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Awake: -- min"
+        android:textSize="24sp"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:id="@+id/sleepScoreText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sleep Score: --"
+        android:textSize="28sp"
+        android:textColor="@color/white"
+        android:paddingTop="20dp"/>
+</LinearLayout>
