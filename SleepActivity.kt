@@ -1,9 +1,12 @@
 package com.example.healthtracker
+
+import com.example.healthtracker.R
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.*
 import android.os.Bundle
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 
@@ -17,6 +20,18 @@ class SleepActivity : AppCompatActivity() {
     private var bluetoothGatt: BluetoothGatt? = null
     private var heartRate = 0
 
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult) {
+            super.onScanResult(callbackType, result)
+            val device = result.device
+            if (device.name != null && device.name.contains("Ring")) {
+                val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+                bluetoothAdapter?.bluetoothLeScanner?.stopScan(this)
+                connectToDevice(device)
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sleep)
@@ -28,7 +43,6 @@ class SleepActivity : AppCompatActivity() {
         sleepScoreText = findViewById(R.id.sleepScoreText)
 
         dbHelper = SleepDatabaseHelper(this)
-
         scanForBluetoothDevices()
     }
 
@@ -36,25 +50,18 @@ class SleepActivity : AppCompatActivity() {
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         if (bluetoothAdapter?.isEnabled == true) {
             val bluetoothLeScanner = bluetoothAdapter.bluetoothLeScanner
-            val scanCallback = object : ScanCallback() {
-                override fun onScanResult(callbackType: Int, result: ScanResult) {
-                    super.onScanResult(callbackType, result)
-                    val device = result.device
-                    if (device.name != null && device.name.contains("Ring")) { 
-                        bluetoothLeScanner?.stopScan(this)
-                        connectToDevice(device)
-                    }
-                }
-            }
             bluetoothLeScanner.startScan(scanCallback)
+            Toast.makeText(this, "Scanning for Bluetooth devices...", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "Please enable Bluetooth", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun connectToDevice(device: BluetoothDevice) {
         bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-                when (newState) {
-                    BluetoothProfile.STATE_CONNECTED -> gatt?.discoverServices()
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    gatt?.discoverServices()
                 }
             }
 
@@ -65,18 +72,26 @@ class SleepActivity : AppCompatActivity() {
             }
 
             override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
-                heartRate = characteristic?.value?.get(1)?.toInt() ?: 0
-                processSleepData(heartRate)
+                if (characteristic?.uuid == UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB")) {
+                    val flag = characteristic.value[0].toInt()
+                    heartRate = if (flag and 0x01 != 0) {
+                        (characteristic.value[1].toInt() and 0xFF) or
+                                (characteristic.value[2].toInt() and 0xFF shl 8)
+                    } else {
+                        characteristic.value[1].toInt() and 0xFF
+                    }
+                    runOnUiThread { processSleepData(heartRate) }
+                }
             }
         })
     }
 
     private fun processSleepData(heartRate: Int) {
         val random = Random()
-        val deepSleep = random.nextInt(90) + 60 
-        val lightSleep = random.nextInt(120) + 90 
-        val remSleep = random.nextInt(60) + 30 
-        val awakeTime = random.nextInt(20) + 5 
+        val deepSleep = random.nextInt(90) + 60
+        val lightSleep = random.nextInt(120) + 90
+        val remSleep = random.nextInt(60) + 30
+        val awakeTime = random.nextInt(20) + 5
         val sleepScore = calculateSleepScore(deepSleep, lightSleep, remSleep, awakeTime)
 
         dbHelper.insertSleepData(deepSleep, lightSleep, remSleep, awakeTime, sleepScore)

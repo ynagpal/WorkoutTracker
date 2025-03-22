@@ -1,4 +1,5 @@
 package com.example.healthtracker
+import com.example.healthtracker.R
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.bluetooth.*
@@ -47,24 +48,14 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        startWorkoutButton.setOnClickListener {
-            startWorkout()
-        }
-
-        historyButton.setOnClickListener {
-            startActivity(Intent(this, HistoryActivity::class.java))
-        }
-
-        sleepButton.setOnClickListener {
-            startActivity(Intent(this, SleepActivity::class.java))
-        }
-
-        spO2Button.setOnClickListener {
-            startActivity(Intent(this, SpO2Activity::class.java))
-        }
+        startWorkoutButton.setOnClickListener { startWorkout() }
+        historyButton.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
+        sleepButton.setOnClickListener { startActivity(Intent(this, SleepActivity::class.java)) }
+        spO2Button.setOnClickListener { startActivity(Intent(this, SpO2Activity::class.java)) }
 
         darkModeToggle.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) setTheme(android.R.style.Theme_Black) else setTheme(android.R.style.Theme_Light)
+            if (isChecked) setTheme(android.R.style.Theme_Black)
+            else setTheme(android.R.style.Theme_Light)
             recreate()
         }
 
@@ -79,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         handler.postDelayed(object : Runnable {
             override fun run() {
                 updateWorkout()
-                handler.postDelayed(this, 1000) // Update every 1 second
+                handler.postDelayed(this, 1000)
             }
         }, 1000)
     }
@@ -99,9 +90,7 @@ class MainActivity : AppCompatActivity() {
     private fun calculateCalories(weight: Int, age: Int, heartRate: Int, duration: Int): Double {
         return if (duration > 0) {
             ((age * 0.2017) + (weight * 0.09036) + (heartRate * 0.6309) - 55.0969) * (duration / 4.184)
-        } else {
-            0.0
-        }
+        } else 0.0
     }
 
     private fun scanForBluetoothDevices() {
@@ -115,7 +104,7 @@ class MainActivity : AppCompatActivity() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 super.onScanResult(callbackType, result)
                 val device = result.device
-                if (device.name != null && device.name.contains("Ring")) { // Adjust based on your ring's name
+                if (device.name != null && device.name.contains("Ring")) {
                     bluetoothLeScanner?.stopScan(this)
                     connectToDevice(device)
                 }
@@ -155,17 +144,16 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     if (characteristic?.uuid == UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB")) {
-                        val flag = characteristic.value[0].toInt()
+                        val flag = characteristic.value?.get(0)?.toInt() ?: return
                         heartRate = if (flag and 0x01 != 0) {
-                            (characteristic.value[1].toInt() and 0xFF) or
-                                    (characteristic.value[2].toInt() and 0xFF shl 8)
+                            (characteristic.value?.get(1)?.toInt() ?: 0 and 0xFF) or
+                            ((characteristic.value?.get(2)?.toInt() ?: 0 and 0xFF) shl 8)
                         } else {
-                            characteristic.value[1].toInt() and 0xFF
+                            characteristic.value?.get(1)?.toInt() ?: 0 and 0xFF
                         }
                         runOnUiThread { updateWorkout() }
                     }
                 }
-                // This is a test commit to trigger GitHub Actions
             })
         } catch (e: Exception) {
             Toast.makeText(this, "Error connecting: ${e.message}", Toast.LENGTH_SHORT).show()
