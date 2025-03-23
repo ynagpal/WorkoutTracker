@@ -1,14 +1,12 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
-    <style name="Theme.HealthTracker" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Primary branding color. -->
+    <style name="Theme.HealthTracker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Common light theme -->
         <item name="colorPrimary">@color/purple_500</item>
         <item name="colorPrimaryVariant">@color/purple_700</item>
         <item name="colorOnPrimary">@color/white</item>
-
-        <!-- App icon (no round icon to avoid build failure) -->
-        <item name="android:icon">@mipmap/ic_launcher</item>
-
-        <!-- Customize your theme here. -->
+        <item name="colorSecondary">@color/purple_200</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="android:textColorPrimary">@color/black</item>
     </style>
 </resources>

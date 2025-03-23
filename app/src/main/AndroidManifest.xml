@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.healthtracker">
 
-    <!-- Permissions -->
+    <!-- Bluetooth Permissions -->
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
+    <!-- Sensor and Location Permissions -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <application
         android:allowBackup="true"
@@ -16,10 +19,14 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.HealthTracker">
+
         <activity
             android:name=".LogViewerActivity"
-            android:exported="false" />
-
+            android:exported="true" />
+        <activity android:name=".DeviceListActivity" android:exported="true"/>
+        <activity
+            android:name=".HistoryActivity"
+            android:exported="true" />
 
         <activity
             android:name=".MainActivity"
@@ -30,7 +37,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".SleepActivity" />
-        <activity android:name=".SpO2Activity" />
+        <activity android:name=".SleepActivity" android:exported="true" />
+        <activity android:name=".SpO2Activity" android:exported="true" />
     </application>
 </manifest>
