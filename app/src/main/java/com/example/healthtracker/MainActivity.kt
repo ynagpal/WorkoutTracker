@@ -31,6 +31,18 @@ class MainActivity : AppCompatActivity() {
     private lateinit var darkModeToggle: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            Logger.log(this, "CRASH", throwable.stackTraceToString())
+            private lateinit var viewLogsButton: Button
+
+            // inside onCreate:
+            viewLogsButton = findViewById(R.id.viewLogsButton)
+            viewLogsButton.setOnClickListener {
+                startActivity(Intent(this, LogViewerActivity::class.java))
+            }
+
+        }
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
