@@ -1,5 +1,5 @@
 package com.example.healthtracker
-
+import kotlin.math.roundToInt
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Intent
