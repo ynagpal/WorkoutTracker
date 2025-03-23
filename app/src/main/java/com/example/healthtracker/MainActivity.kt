@@ -29,11 +29,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sleepButton: Button
     private lateinit var spO2Button: Button
     private lateinit var darkModeToggle: Switch
+    private lateinit var viewLogsButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             Logger.log(this, "CRASH", throwable.stackTraceToString())
-            private lateinit var viewLogsButton: Button
+        
 
             // inside onCreate:
             viewLogsButton = findViewById(R.id.viewLogsButton)
