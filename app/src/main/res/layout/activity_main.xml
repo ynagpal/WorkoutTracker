@@ -1,70 +1,90 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:gravity="center"
+    android:padding="16dp"
+    android:background="@color/white">
 
     <TextView
         android:id="@+id/heartRateText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Heart Rate" />
+        android:text="❤️ Heart Rate: 0 BPM"
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/stepsText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Steps" />
+        android:text="🚶 Steps Taken: 0"
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/caloriesText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Calories" />
+        android:text="🔥 Calories Burned: 0 kcal"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/startWorkoutButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Start Workout" />
+        android:text="Start Workout"
+        android:layout_marginTop="16dp" />
 
     <Button
         android:id="@+id/historyButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="History" />
+        android:text="History"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/sleepButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Sleep" />
+        android:text="Sleep"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/spO2Button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SpO2" />
+        android:text="SpO2"
+        android:layout_marginTop="8dp" />
+
+    <ListView
+        android:id="@+id/deviceListView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp" />
 
     <ImageView
         android:id="@+id/heartRateGraph"
         android:layout_width="match_parent"
         android:layout_height="100dp"
+        android:layout_marginTop="16dp"
         android:background="#ccc" />
 
     <Switch
         android:id="@+id/darkModeToggle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Dark Mode" />
+        android:text="Dark Mode"
+        android:layout_marginTop="12dp" />
 
     <Button
         android:id="@+id/viewLogsButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="View Logs"
-        android:layout_marginTop="16dp"
-        android:layout_gravity="center" />
+        android:layout_marginTop="12dp" />
 
 </LinearLayout>
