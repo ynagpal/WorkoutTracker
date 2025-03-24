@@ -24,7 +24,7 @@
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:layout_marginTop="12dp"
-            android:src="@drawable/ic_heart_pulse"
+            android:src="@android:drawable/ic_dialog_info"
             android:contentDescription="Heart Rate Icon" />
 
         <TextView
