@@ -6,6 +6,7 @@ import android.bluetooth.le.*
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -62,9 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        connectBluetoothButton.setOnClickListener {
-            scanForBluetoothDevices()
-        }
+        connectBluetoothButton.setOnClickListener { scanForBluetoothDevices() }
 
         startWorkoutButton.setOnClickListener {
             if (!isDeviceConnected) {
@@ -74,25 +73,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        historyButton.setOnClickListener {
-            startActivity(Intent(this, HistoryActivity::class.java))
-        }
-
-        sleepButton.setOnClickListener {
-            startActivity(Intent(this, SleepActivity::class.java))
-        }
-
-        spO2Button.setOnClickListener {
-            startActivity(Intent(this, SpO2Activity::class.java))
-        }
-
-        viewLogsButton.setOnClickListener {
-            startActivity(Intent(this, LogViewerActivity::class.java))
-        }
+        historyButton.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
+        sleepButton.setOnClickListener { startActivity(Intent(this, SleepActivity::class.java)) }
+        spO2Button.setOnClickListener { startActivity(Intent(this, SpO2Activity::class.java)) }
+        viewLogsButton.setOnClickListener { startActivity(Intent(this, LogViewerActivity::class.java)) }
 
         darkModeToggle.setOnCheckedChangeListener { _, isChecked ->
-            val mode = if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-            AppCompatDelegate.setDefaultNightMode(mode)
+            AppCompatDelegate.setDefaultNightMode(
+                if (isChecked) AppCompatDelegate.MODE_NIGHT_YES
+                else AppCompatDelegate.MODE_NIGHT_NO
+            )
         }
 
         val pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse)
@@ -189,10 +179,16 @@ class MainActivity : AppCompatActivity() {
 
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val service = gatt?.getService(UUID.fromString("0000180D-0000-1000-8000-00805F9B34FB"))
-                    val characteristic = service?.getCharacteristic(UUID.fromString("00002A37-0000-1000-8000-00805F9B34FB"))
+                    val serviceUUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb") // Heart Rate Service
+                    val characteristicUUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb") // Heart Rate Measurement
+
+                    val service = gatt?.getService(serviceUUID)
+                    val characteristic = service?.getCharacteristic(characteristicUUID)
                     if (characteristic != null) {
                         gatt.setCharacteristicNotification(characteristic, true)
+                        val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                        descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                        gatt.writeDescriptor(descriptor)
                     }
                 }
             }
