@@ -4,7 +4,8 @@ import android.app.AlertDialog
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Intent
-import android.os.*
+import android.os.Bundle
+import android.os.Handler
 import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -22,14 +23,14 @@ class MainActivity : AppCompatActivity() {
     private var caloriesBurned = 0.0
     private var workoutDuration = 0
     private var startTime: Long = 0
-    private var isWorkoutRunning = false
-    private val handler = Handler(Looper.getMainLooper())
+    private val handler = Handler()
 
     private lateinit var heartRateText: TextView
     private lateinit var stepsText: TextView
     private lateinit var caloriesText: TextView
     private lateinit var heartRateGraph: ImageView
     private lateinit var startWorkoutButton: Button
+    private lateinit var connectBluetoothButton: Button
     private lateinit var historyButton: Button
     private lateinit var sleepButton: Button
     private lateinit var spO2Button: Button
@@ -52,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         caloriesText = findViewById(R.id.caloriesText)
         heartRateGraph = findViewById(R.id.heartRateGraph)
         startWorkoutButton = findViewById(R.id.startWorkoutButton)
+        connectBluetoothButton = findViewById(R.id.connectBluetoothButton)
         historyButton = findViewById(R.id.historyButton)
         sleepButton = findViewById(R.id.sleepButton)
         spO2Button = findViewById(R.id.spO2Button)
@@ -60,10 +62,14 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
+        connectBluetoothButton.setOnClickListener {
+            scanForBluetoothDevices()
+        }
+
         startWorkoutButton.setOnClickListener {
             if (!isDeviceConnected) {
                 Toast.makeText(this, "Please connect a Bluetooth device first.", Toast.LENGTH_SHORT).show()
-            } else if (!isWorkoutRunning) {
+            } else {
                 startWorkout()
             }
         }
@@ -89,16 +95,12 @@ class MainActivity : AppCompatActivity() {
             AppCompatDelegate.setDefaultNightMode(mode)
         }
 
-        scanForBluetoothDevices()
-
         val pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse)
         heartRateGraph.startAnimation(pulseAnimation)
     }
 
     private fun startWorkout() {
-        isWorkoutRunning = true
         startTime = System.currentTimeMillis()
-
         handler.postDelayed(object : Runnable {
             override fun run() {
                 updateWorkout()
@@ -112,9 +114,11 @@ class MainActivity : AppCompatActivity() {
         steps += (heartRate / 3)
         caloriesBurned = calculateCalories(70, 25, heartRate, workoutDuration)
 
-        heartRateText.text = "❤️ Heart Rate: $heartRate BPM"
-        stepsText.text = "🚶 Steps Taken: $steps"
-        caloriesText.text = "🔥 Calories Burned: ${caloriesBurned.roundToInt()} kcal"
+        runOnUiThread {
+            heartRateText.text = "❤️ Heart Rate: $heartRate BPM"
+            stepsText.text = "🚶 Steps Taken: $steps"
+            caloriesText.text = "🔥 Calories Burned: ${caloriesBurned.roundToInt()} kcal"
+        }
     }
 
     private fun calculateCalories(weight: Int, age: Int, heartRate: Int, duration: Int): Double {
@@ -159,7 +163,7 @@ class MainActivity : AppCompatActivity() {
         val deviceNames = scanResults.map { it.name + "\n" + it.address }.toTypedArray()
 
         AlertDialog.Builder(this)
-            .setTitle("Select Device")
+            .setTitle("Select Bluetooth Device")
             .setItems(deviceNames) { _, which ->
                 connectToDevice(scanResults[which])
             }
@@ -169,24 +173,16 @@ class MainActivity : AppCompatActivity() {
     private fun connectToDevice(device: BluetoothDevice) {
         bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-                when (newState) {
-                    BluetoothProfile.STATE_CONNECTED -> {
-                        isDeviceConnected = true
-                        Logger.log(this@MainActivity, "BLE", "Connected to ${device.name}")
-                        runOnUiThread {
-                            Toast.makeText(this@MainActivity, "Connected to ${device.name}", Toast.LENGTH_SHORT).show()
-                        }
-                        gatt?.discoverServices()
+                if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    isDeviceConnected = true
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "Connected to ${device.name}", Toast.LENGTH_SHORT).show()
                     }
-
-                    BluetoothProfile.STATE_DISCONNECTED -> {
-                        isDeviceConnected = false
-                        Logger.log(this@MainActivity, "BLE", "Disconnected from ${device.name}")
-                        runOnUiThread {
-                            Toast.makeText(this@MainActivity, "Disconnected from ${device.name}", Toast.LENGTH_SHORT).show()
-                        }
-                        // Optionally reconnect automatically
-                        // connectToDevice(device)
+                    gatt?.discoverServices()
+                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    isDeviceConnected = false
+                    runOnUiThread {
+                        Toast.makeText(this@MainActivity, "Disconnected from ${device.name}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -211,7 +207,6 @@ class MainActivity : AppCompatActivity() {
                     value.getOrNull(1)?.toInt() ?: 0 and 0xFF
                 }
 
-                Logger.log(this@MainActivity, "BLE", "Heart Rate: $heartRate")
                 runOnUiThread { updateWorkout() }
             }
         })
