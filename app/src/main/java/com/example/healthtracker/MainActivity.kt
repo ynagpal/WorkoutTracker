@@ -4,12 +4,9 @@ import android.app.AlertDialog
 import android.bluetooth.*
 import android.bluetooth.le.*
 import android.content.Intent
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
+import android.os.*
 import android.view.animation.AnimationUtils
 import android.widget.*
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import kotlin.math.roundToInt
@@ -25,7 +22,8 @@ class MainActivity : AppCompatActivity() {
     private var caloriesBurned = 0.0
     private var workoutDuration = 0
     private var startTime: Long = 0
-    private val handler = Handler()
+    private var isWorkoutRunning = false
+    private val handler = Handler(Looper.getMainLooper())
 
     private lateinit var heartRateText: TextView
     private lateinit var stepsText: TextView
@@ -65,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         startWorkoutButton.setOnClickListener {
             if (!isDeviceConnected) {
                 Toast.makeText(this, "Please connect a Bluetooth device first.", Toast.LENGTH_SHORT).show()
-            } else {
+            } else if (!isWorkoutRunning) {
                 startWorkout()
             }
         }
@@ -98,7 +96,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startWorkout() {
+        isWorkoutRunning = true
         startTime = System.currentTimeMillis()
+
         handler.postDelayed(object : Runnable {
             override fun run() {
                 updateWorkout()
@@ -112,11 +112,9 @@ class MainActivity : AppCompatActivity() {
         steps += (heartRate / 3)
         caloriesBurned = calculateCalories(70, 25, heartRate, workoutDuration)
 
-        runOnUiThread {
-            heartRateText.text = "❤️ Heart Rate: $heartRate BPM"
-            stepsText.text = "🚶 Steps Taken: $steps"
-            caloriesText.text = "🔥 Calories Burned: ${caloriesBurned.roundToInt()} kcal"
-        }
+        heartRateText.text = "❤️ Heart Rate: $heartRate BPM"
+        stepsText.text = "🚶 Steps Taken: $steps"
+        caloriesText.text = "🔥 Calories Burned: ${caloriesBurned.roundToInt()} kcal"
     }
 
     private fun calculateCalories(weight: Int, age: Int, heartRate: Int, duration: Int): Double {
@@ -171,16 +169,24 @@ class MainActivity : AppCompatActivity() {
     private fun connectToDevice(device: BluetoothDevice) {
         bluetoothGatt = device.connectGatt(this, false, object : BluetoothGattCallback() {
             override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
-                if (newState == BluetoothProfile.STATE_CONNECTED) {
-                    isDeviceConnected = true
-                    runOnUiThread {
-                        Toast.makeText(this@MainActivity, "Connected to ${device.name}", Toast.LENGTH_SHORT).show()
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        isDeviceConnected = true
+                        Logger.log(this@MainActivity, "BLE", "Connected to ${device.name}")
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, "Connected to ${device.name}", Toast.LENGTH_SHORT).show()
+                        }
+                        gatt?.discoverServices()
                     }
-                    gatt?.discoverServices()
-                } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                    isDeviceConnected = false
-                    runOnUiThread {
-                        Toast.makeText(this@MainActivity, "Disconnected from ${device.name}", Toast.LENGTH_SHORT).show()
+
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        isDeviceConnected = false
+                        Logger.log(this@MainActivity, "BLE", "Disconnected from ${device.name}")
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity, "Disconnected from ${device.name}", Toast.LENGTH_SHORT).show()
+                        }
+                        // Optionally reconnect automatically
+                        // connectToDevice(device)
                     }
                 }
             }
@@ -205,6 +211,7 @@ class MainActivity : AppCompatActivity() {
                     value.getOrNull(1)?.toInt() ?: 0 and 0xFF
                 }
 
+                Logger.log(this@MainActivity, "BLE", "Heart Rate: $heartRate")
                 runOnUiThread { updateWorkout() }
             }
         })
