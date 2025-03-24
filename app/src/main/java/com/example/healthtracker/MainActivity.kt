@@ -3,7 +3,7 @@ package com.example.healthtracker
 import android.app.AlertDialog
 import android.bluetooth.*
 import android.bluetooth.le.*
-import android.content.Intent
+import android.content.*
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private val scanResults = mutableListOf<BluetoothDevice>()
     private var scanCallback: ScanCallback? = null
+    private var classicReceiver: BroadcastReceiver? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Thread.setDefaultUncaughtExceptionHandler { _, throwable ->
@@ -118,8 +119,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scanForBluetoothDevices() {
-        val scanner = bluetoothAdapter?.bluetoothLeScanner ?: return
         scanResults.clear()
+        val bleScanner = bluetoothAdapter?.bluetoothLeScanner ?: return
 
         scanCallback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult?) {
@@ -131,17 +132,50 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onScanFailed(errorCode: Int) {
-                Toast.makeText(this@MainActivity, "Scan failed: $errorCode", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, "BLE scan failed: $errorCode", Toast.LENGTH_SHORT).show()
             }
         }
 
-        scanner.startScan(scanCallback)
-        Toast.makeText(this, "Scanning for devices...", Toast.LENGTH_SHORT).show()
+        bleScanner.startScan(scanCallback)
+        Toast.makeText(this, "Scanning BLE devices...", Toast.LENGTH_SHORT).show()
 
         handler.postDelayed({
-            scanner.stopScan(scanCallback)
-            showDeviceSelectionDialog()
+            bleScanner.stopScan(scanCallback)
+            if (scanResults.isEmpty()) {
+                startClassicBluetoothDiscovery()
+            } else {
+                showDeviceSelectionDialog()
+            }
         }, 5000)
+    }
+
+    private fun startClassicBluetoothDiscovery() {
+        Toast.makeText(this, "Scanning classic devices...", Toast.LENGTH_SHORT).show()
+        classicReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    BluetoothDevice.ACTION_FOUND -> {
+                        val device: BluetoothDevice? = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        if (device?.name != null && !scanResults.contains(device)) {
+                            scanResults.add(device)
+                        }
+                    }
+
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        unregisterReceiver(this)
+                        showDeviceSelectionDialog()
+                    }
+                }
+            }
+        }
+
+        val filter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_FOUND)
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        }
+
+        registerReceiver(classicReceiver, filter)
+        bluetoothAdapter?.startDiscovery()
     }
 
     private fun showDeviceSelectionDialog() {
@@ -179,11 +213,8 @@ class MainActivity : AppCompatActivity() {
 
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val serviceUUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb") // Heart Rate Service
-                    val characteristicUUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb") // Heart Rate Measurement
-
-                    val service = gatt?.getService(serviceUUID)
-                    val characteristic = service?.getCharacteristic(characteristicUUID)
+                    val service = gatt?.getService(UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb"))
+                    val characteristic = service?.getCharacteristic(UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb"))
                     if (characteristic != null) {
                         gatt.setCharacteristicNotification(characteristic, true)
                         val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
