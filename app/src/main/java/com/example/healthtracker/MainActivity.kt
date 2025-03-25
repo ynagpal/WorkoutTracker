@@ -6,13 +6,12 @@ import android.bluetooth.le.*
 import android.content.*
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.animation.AnimationUtils
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
-import kotlin.math.roundToInt
 import java.util.*
+import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,12 +24,14 @@ class MainActivity : AppCompatActivity() {
     private var workoutDuration = 0
     private var startTime: Long = 0
     private val handler = Handler()
+    private var isWorkoutRunning = false
 
     private lateinit var heartRateText: TextView
     private lateinit var stepsText: TextView
     private lateinit var caloriesText: TextView
     private lateinit var heartRateGraph: ImageView
     private lateinit var startWorkoutButton: Button
+    private lateinit var stopWorkoutButton: Button
     private lateinit var connectBluetoothButton: Button
     private lateinit var historyButton: Button
     private lateinit var sleepButton: Button
@@ -55,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         caloriesText = findViewById(R.id.caloriesText)
         heartRateGraph = findViewById(R.id.heartRateGraph)
         startWorkoutButton = findViewById(R.id.startWorkoutButton)
+        stopWorkoutButton = findViewById(R.id.stopWorkoutButton)
         connectBluetoothButton = findViewById(R.id.connectBluetoothButton)
         historyButton = findViewById(R.id.historyButton)
         sleepButton = findViewById(R.id.sleepButton)
@@ -64,6 +66,8 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
+        stopWorkoutButton.isEnabled = false
+
         connectBluetoothButton.setOnClickListener { scanForBluetoothDevices() }
 
         startWorkoutButton.setOnClickListener {
@@ -72,6 +76,10 @@ class MainActivity : AppCompatActivity() {
             } else {
                 startWorkout()
             }
+        }
+
+        stopWorkoutButton.setOnClickListener {
+            stopWorkout()
         }
 
         historyButton.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
@@ -91,13 +99,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startWorkout() {
+        if (isWorkoutRunning) return
+        isWorkoutRunning = true
+        startWorkoutButton.isEnabled = false
+        stopWorkoutButton.isEnabled = true
+
         startTime = System.currentTimeMillis()
-        handler.postDelayed(object : Runnable {
-            override fun run() {
+        handler.post(workoutRunnable)
+    }
+
+    private fun stopWorkout() {
+        isWorkoutRunning = false
+        handler.removeCallbacks(workoutRunnable)
+        startWorkoutButton.isEnabled = true
+        stopWorkoutButton.isEnabled = false
+        Toast.makeText(this, "Workout stopped", Toast.LENGTH_SHORT).show()
+    }
+
+    private val workoutRunnable = object : Runnable {
+        override fun run() {
+            if (isWorkoutRunning) {
                 updateWorkout()
                 handler.postDelayed(this, 1000)
             }
-        }, 1000)
+        }
     }
 
     private fun updateWorkout() {
@@ -212,15 +237,13 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val service = gatt?.getService(UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb"))
-                    val characteristic = service?.getCharacteristic(UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb"))
-                    if (characteristic != null) {
-                        gatt.setCharacteristicNotification(characteristic, true)
-                        val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
-                        descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
-                        gatt.writeDescriptor(descriptor)
-                    }
+                val service = gatt?.getService(UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb"))
+                val characteristic = service?.getCharacteristic(UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb"))
+                if (characteristic != null) {
+                    gatt.setCharacteristicNotification(characteristic, true)
+                    val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                    descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                    gatt.writeDescriptor(descriptor)
                 }
             }
 
