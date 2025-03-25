@@ -3,50 +3,58 @@ package com.example.healthtracker
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.setPadding
 
 class LogViewerActivity : AppCompatActivity() {
+
+    private lateinit var logTextView: TextView
+    private lateinit var toggleGroup: RadioGroup
+    private lateinit var crashLogButton: RadioButton
+    private lateinit var workoutLogButton: RadioButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
+            setPadding(16, 16, 16, 16)
         }
 
-        val toggleGroup = RadioGroup(this).apply {
+        toggleGroup = RadioGroup(this).apply {
             orientation = RadioGroup.HORIZONTAL
-            val crashLogsBtn = RadioButton(this@LogViewerActivity).apply {
-                text = "Crash Logs"
-                id = 1
-                isChecked = true
-            }
-            val workoutLogsBtn = RadioButton(this@LogViewerActivity).apply {
-                text = "Workout Logs"
-                id = 2
-            }
-            addView(crashLogsBtn)
-            addView(workoutLogsBtn)
         }
 
-        val logTextView = TextView(this).apply {
-            setPadding(24)
+        crashLogButton = RadioButton(this).apply {
+            text = "Crash Logs"
+            isChecked = true
+        }
+
+        workoutLogButton = RadioButton(this).apply {
+            text = "Workout Logs"
+        }
+
+        toggleGroup.addView(crashLogButton)
+        toggleGroup.addView(workoutLogButton)
+
+        logTextView = TextView(this).apply {
+            setPadding(8, 16, 8, 16)
             setTextIsSelectable(true)
             textSize = 14f
         }
 
-        toggleGroup.setOnCheckedChangeListener { _, checkedId ->
-            val fileName = if (checkedId == 2) "workout_log.txt" else "crash_log.txt"
-            logTextView.text = Logger.getLogContent(this, fileName)
-        }
-
         layout.addView(toggleGroup)
-        layout.addView(ScrollView(this).apply {
-            addView(logTextView)
-        })
+        layout.addView(logTextView)
 
         setContentView(layout)
 
-        // Load initial crash log
-        logTextView.text = Logger.getLogContent(this, "crash_log.txt")
+        // Default load
+        logTextView.text = Logger.getCrashLogs(this)
+
+        toggleGroup.setOnCheckedChangeListener { _, checkedId ->
+            logTextView.text = when (checkedId) {
+                crashLogButton.id -> Logger.getCrashLogs(this)
+                workoutLogButton.id -> Logger.getWorkoutLogs(this)
+                else -> ""
+            }
+        }
     }
 }
