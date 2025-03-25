@@ -26,9 +26,6 @@ class MainActivity : AppCompatActivity() {
     private var startTime: Long = 0
     private val handler = Handler()
 
-    private val userWeight = 70  // TODO: Make dynamic in future
-    private val userAge = 25     // TODO: Make dynamic in future
-
     private lateinit var heartRateText: TextView
     private lateinit var stepsText: TextView
     private lateinit var caloriesText: TextView
@@ -43,6 +40,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var darkModeToggle: Switch
     private lateinit var viewLogsButton: Button
 
+    private var userWeight = 70
+    private var userAge = 25
+
     private val scanResults = mutableListOf<BluetoothDevice>()
     private var scanCallback: ScanCallback? = null
     private var workoutRunnable: Runnable? = null
@@ -54,6 +54,8 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        loadUserDataIfAvailable()
 
         // View bindings
         heartRateText = findViewById(R.id.heartRateText)
@@ -72,7 +74,6 @@ class MainActivity : AppCompatActivity() {
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
-        // Workout controls
         startWorkoutButton.setOnClickListener {
             if (!isDeviceConnected) {
                 Toast.makeText(this, "Please connect a Bluetooth device first.", Toast.LENGTH_SHORT).show()
@@ -81,22 +82,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        stopWorkoutButton.setOnClickListener {
-            stopWorkout()
-        }
-
-        // Bluetooth scan
-        connectBluetoothButton.setOnClickListener {
-            scanForBluetoothDevices()
-        }
-
-        // Navigation
+        stopWorkoutButton.setOnClickListener { stopWorkout() }
+        connectBluetoothButton.setOnClickListener { scanForBluetoothDevices() }
         historyButton.setOnClickListener { startActivity(Intent(this, HistoryActivity::class.java)) }
         sleepButton.setOnClickListener { startActivity(Intent(this, SleepActivity::class.java)) }
         spO2Button.setOnClickListener { startActivity(Intent(this, SpO2Activity::class.java)) }
         viewLogsButton.setOnClickListener { startActivity(Intent(this, LogViewerActivity::class.java)) }
 
-        // Dark mode
         darkModeToggle.setOnCheckedChangeListener { _, isChecked ->
             AppCompatDelegate.setDefaultNightMode(
                 if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
@@ -107,11 +99,47 @@ class MainActivity : AppCompatActivity() {
         heartRateGraph.startAnimation(pulseAnimation)
     }
 
+    private fun loadUserDataIfAvailable() {
+        val prefs = getSharedPreferences("userPrefs", MODE_PRIVATE)
+        if (!prefs.contains("weight") || !prefs.contains("age")) {
+            askUserDetails()
+        } else {
+            userWeight = prefs.getInt("weight", 70)
+            userAge = prefs.getInt("age", 25)
+        }
+    }
+
+    private fun askUserDetails() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_user_details, null)
+        val weightInput = dialogView.findViewById<EditText>(R.id.weightInput)
+        val ageInput = dialogView.findViewById<EditText>(R.id.ageInput)
+
+        AlertDialog.Builder(this)
+            .setTitle("Enter your details")
+            .setView(dialogView)
+            .setCancelable(false)
+            .setPositiveButton("Save") { _, _ ->
+                val weight = weightInput.text.toString().toIntOrNull()
+                val age = ageInput.text.toString().toIntOrNull()
+                if (weight != null && age != null) {
+                    userWeight = weight
+                    userAge = age
+                    getSharedPreferences("userPrefs", MODE_PRIVATE).edit().apply {
+                        putInt("weight", userWeight)
+                        putInt("age", userAge)
+                        apply()
+                    }
+                } else {
+                    Toast.makeText(this, "Invalid input. Please restart the app.", Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
+    }
+
     private fun startWorkout() {
         if (isWorkoutRunning) return
         isWorkoutRunning = true
         startTime = System.currentTimeMillis()
-
         workoutRunnable = object : Runnable {
             override fun run() {
                 updateWorkout()
@@ -119,21 +147,27 @@ class MainActivity : AppCompatActivity() {
             }
         }
         handler.post(workoutRunnable!!)
-        Toast.makeText(this, "Workout started", Toast.LENGTH_SHORT).show()
     }
 
     private fun stopWorkout() {
         if (!isWorkoutRunning) return
         isWorkoutRunning = false
         handler.removeCallbacks(workoutRunnable!!)
-        Toast.makeText(this, "Workout stopped", Toast.LENGTH_SHORT).show()
 
-        Logger.log(this, "WORKOUT", "Duration: $workoutDuration sec, HR: $heartRate BPM, Steps: $steps, Calories: ${caloriesBurned.roundToInt()} kcal")
+        Logger.logWorkout(this, "Duration: ${workoutDuration}s, HR: $heartRate, Steps: $steps, Calories: ${caloriesBurned.roundToInt()} kcal")
 
-        // Reset values if you want:
-        // steps = 0
-        // caloriesBurned = 0.0
-        // heartRate = 0
+        // Reset UI values
+        workoutDuration = 0
+        heartRate = 0
+        steps = 0
+        caloriesBurned = 0.0
+
+        runOnUiThread {
+            heartRateText.text = "❤️ Heart Rate: -- BPM"
+            stepsText.text = "🚶 Steps Taken: --"
+            caloriesText.text = "🔥 Calories Burned: -- kcal"
+            durationText.text = "⏱ Duration: -- sec"
+        }
     }
 
     private fun updateWorkout() {
