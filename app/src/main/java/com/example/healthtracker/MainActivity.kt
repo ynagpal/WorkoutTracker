@@ -26,6 +26,9 @@ class MainActivity : AppCompatActivity() {
     private var startTime: Long = 0
     private val handler = Handler()
 
+    private val userWeight = 70  // TODO: Make dynamic in future
+    private val userAge = 25     // TODO: Make dynamic in future
+
     private lateinit var heartRateText: TextView
     private lateinit var stepsText: TextView
     private lateinit var caloriesText: TextView
@@ -95,8 +98,9 @@ class MainActivity : AppCompatActivity() {
 
         // Dark mode
         darkModeToggle.setOnCheckedChangeListener { _, isChecked ->
-            val mode = if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
-            AppCompatDelegate.setDefaultNightMode(mode)
+            AppCompatDelegate.setDefaultNightMode(
+                if (isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+            )
         }
 
         val pulseAnimation = AnimationUtils.loadAnimation(this, R.anim.pulse)
@@ -122,20 +126,26 @@ class MainActivity : AppCompatActivity() {
         if (!isWorkoutRunning) return
         isWorkoutRunning = false
         handler.removeCallbacks(workoutRunnable!!)
-        Logger.log(this, "WORKOUT", "Stopped. Duration: $workoutDuration sec, HR: $heartRate, Steps: $steps, Calories: ${caloriesBurned.roundToInt()}")
         Toast.makeText(this, "Workout stopped", Toast.LENGTH_SHORT).show()
+
+        Logger.log(this, "WORKOUT", "Duration: $workoutDuration sec, HR: $heartRate BPM, Steps: $steps, Calories: ${caloriesBurned.roundToInt()} kcal")
+
+        // Reset values if you want:
+        // steps = 0
+        // caloriesBurned = 0.0
+        // heartRate = 0
     }
 
     private fun updateWorkout() {
         workoutDuration = ((System.currentTimeMillis() - startTime) / 1000).toInt()
         steps += (heartRate / 3)
-        caloriesBurned = calculateCalories(70, 25, heartRate, workoutDuration)
+        caloriesBurned = calculateCalories(userWeight, userAge, heartRate, workoutDuration)
 
         runOnUiThread {
             heartRateText.text = "❤️ Heart Rate: $heartRate BPM"
             stepsText.text = "🚶 Steps Taken: $steps"
             caloriesText.text = "🔥 Calories Burned: ${caloriesBurned.roundToInt()} kcal"
-            durationText.text = "⏱ Duration: ${workoutDuration} sec"
+            durationText.text = "⏱ Duration: $workoutDuration sec"
         }
     }
 
@@ -207,8 +217,8 @@ class MainActivity : AppCompatActivity() {
 
             override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    val serviceUUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb") // Heart Rate Service
-                    val charUUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb")    // Heart Rate Measurement
+                    val serviceUUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb")
+                    val charUUID = UUID.fromString("00002A37-0000-1000-8000-00805f9b34fb")
 
                     val service = gatt?.getService(serviceUUID)
                     val characteristic = service?.getCharacteristic(charUUID)

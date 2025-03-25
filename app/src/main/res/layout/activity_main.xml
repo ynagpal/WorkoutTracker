@@ -46,7 +46,7 @@
             android:id="@+id/durationText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="⏱ Duration: 0 sec"
+            android:text="⏱ Duration: --"
             android:textSize="18sp"
             android:layout_marginTop="16dp" />
 
@@ -69,8 +69,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Stop Workout"
-            android:layout_marginTop="8dp"
-            android:enabled="false" />
+            android:layout_marginTop="8dp" />
 
 
 
